@@ -6,7 +6,12 @@ import User from '../models/User.js';
 
 // Temporary in-memory storage when MongoDB is not available
 let tempUsers = [];
+let tempActivities = [];
 let tempUserIdCounter = 1;
+
+// Make temp storage globally accessible
+global.tempUsers = tempUsers;
+global.tempActivities = tempActivities;
 
 const router = express.Router();
 
