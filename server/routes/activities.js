@@ -153,15 +153,6 @@ router.get('/', auth, async (req, res) => {
 });
 
 export default router;
-
-const router = express.Router();
-
-// Log activity
-router.post('/', auth, [
-  body('transport').optional().isObject(),
-  body('electricity').optional().isObject(),
-  body('food').optional().isObject()
-], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
