@@ -1,102 +1,83 @@
-
 import express from 'express';
 import User from '../models/User.js';
+import CarbonScore from '../models/CarbonScore.js';
 import Activity from '../models/Activity.js';
 import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get leaderboard
+// Get leaderboard data
 router.get('/', auth, async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
-    
-    // Calculate date range
-    const now = new Date();
-    let startDate;
-    
-    if (period === 'week') {
-      startDate = new Date(now);
-      startDate.setDate(now.getDate() - 7);
-    } else if (period === 'month') {
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    }
+    let leaderboard = [];
 
-    let users, allActivities;
-    
     try {
-      // Get all users
-      users = await User.find({}, 'name email').lean();
-      
-      // Get all activities for the period
-      let dateFilter = {};
-      if (startDate) {
-        dateFilter = { date: { $gte: startDate } };
-      }
-      
-      allActivities = await Activity.find(dateFilter);
-    } catch (dbError) {
-      console.log('MongoDB not available, using temporary storage');
-      
-      // Use temp storage
-      const tempUsers = global.tempUsers || [];
-      const tempActivities = global.tempActivities || [];
-      
-      // Filter users to include current user if not in temp storage
-      users = tempUsers.length > 0 ? tempUsers.map(u => ({
-        _id: u._id,
-        name: u.name,
-        email: u.email
-      })) : [{
-        _id: req.user._id,
-        name: 'Demo User',
-        email: 'demo@example.com'
-      }];
-      
-      // Filter activities by period
-      allActivities = tempActivities.filter(activity => {
-        if (!startDate) return true;
-        return new Date(activity.date) >= startDate;
-      });
-    }
-    
-    // Calculate emissions for each user
-    const leaderboardData = users.map(user => {
-      const userActivities = allActivities.filter(activity => 
-        activity.userId.toString() === user._id.toString()
+      // Try MongoDB first
+      const users = await User.find({}).select('name email');
+
+      const leaderboardData = await Promise.all(
+        users.map(async (user) => {
+          const activities = await Activity.find({ userId: user._id });
+          const totalCO2 = activities.reduce((sum, activity) => sum + activity.totalCO2, 0);
+          const activitiesCount = activities.length;
+
+          return {
+            userId: user._id,
+            name: user.name,
+            email: user.email,
+            totalCO2: Math.round(totalCO2 * 100) / 100,
+            activitiesCount,
+            rank: 0 // Will be set after sorting
+          };
+        })
       );
-      
-      const totalEmissions = userActivities.reduce((sum, activity) => sum + activity.totalCO2, 0);
-      
-      return {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        totalEmissions: Math.round(totalEmissions * 100) / 100,
-        rank: 0 // Will be set after sorting
-      };
-    });
 
-    // Sort by lowest emissions (best performers first)
-    leaderboardData.sort((a, b) => a.totalEmissions - b.totalEmissions);
-    
-    // Add ranks
-    leaderboardData.forEach((user, index) => {
-      user.rank = index + 1;
-    });
+      // Sort by lowest CO2 (better ranking)
+      leaderboard = leaderboardData
+        .sort((a, b) => a.totalCO2 - b.totalCO2)
+        .map((user, index) => ({
+          ...user,
+          rank: index + 1
+        }));
 
-    // Find current user's position
-    const currentUserRank = leaderboardData.find(user => 
-      user.id.toString() === req.user._id.toString()
-    );
+    } catch (dbError) {
+      console.log('MongoDB not available, using temp storage');
+
+      // Fallback to temp storage
+      const users = global.tempUsers || [];
+      const activities = global.tempActivities || [];
+
+      const leaderboardData = users.map(user => {
+        const userActivities = activities.filter(a => a.userId === user._id);
+        const totalCO2 = userActivities.reduce((sum, activity) => sum + activity.totalCO2, 0);
+        const activitiesCount = userActivities.length;
+
+        return {
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          totalCO2: Math.round(totalCO2 * 100) / 100,
+          activitiesCount,
+          rank: 0
+        };
+      });
+
+      // Sort by lowest CO2 (better ranking)
+      leaderboard = leaderboardData
+        .sort((a, b) => a.totalCO2 - b.totalCO2)
+        .map((user, index) => ({
+          ...user,
+          rank: index + 1
+        }));
+    }
 
     res.json({
-      leaderboard: leaderboardData.slice(0, 10), // Top 10
-      currentUser: currentUserRank,
-      period
+      leaderboard,
+      currentUserRank: leaderboard.find(user => user.userId === req.user._id)?.rank || null
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Leaderboard error:', error);
+    res.status(500).json({ error: 'Failed to load leaderboard data' });
   }
 });
 

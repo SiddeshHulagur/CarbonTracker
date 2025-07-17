@@ -6,7 +6,111 @@ import CarbonScore from '../models/CarbonScore.js';
 import { generateEcoTips } from '../utils/carbonCalculator.js';
 import { auth } from '../middleware/auth.js';
 
-// Access temp storage from global
+const router = express.Router();
+
+// Get dashboard data
+router.get('/', auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const now = new Date();
+    
+    let activities, totalActivities, todayActivities, weeklyAvg, monthlyTotal;
+
+    try {
+      // Try MongoDB first
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+      
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - 7);
+      
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      activities = await Activity.find({ userId }).sort({ date: -1 }).limit(10);
+      totalActivities = await Activity.countDocuments({ userId });
+      
+      const todayActivitiesData = await Activity.find({ 
+        userId, 
+        date: { $gte: startOfToday } 
+      });
+      todayActivities = todayActivitiesData.reduce((sum, activity) => sum + activity.totalCO2, 0);
+
+      const weekActivities = await Activity.find({ 
+        userId, 
+        date: { $gte: startOfWeek } 
+      });
+      weeklyAvg = weekActivities.reduce((sum, activity) => sum + activity.totalCO2, 0) / 7;
+
+      const monthActivities = await Activity.find({ 
+        userId, 
+        date: { $gte: startOfMonth } 
+      });
+      monthlyTotal = monthActivities.reduce((sum, activity) => sum + activity.totalCO2, 0);
+
+    } catch (dbError) {
+      console.log('MongoDB not available, using temp storage');
+      
+      // Fallback to temp storage
+      const userActivities = global.tempActivities?.filter(a => a.userId === userId) || [];
+      
+      // Sort by date (newest first) and limit to 10
+      activities = userActivities
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 10);
+      
+      totalActivities = userActivities.length;
+      
+      // Today's activities
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+      const todayActivitiesData = userActivities.filter(a => new Date(a.date) >= startOfToday);
+      todayActivities = todayActivitiesData.reduce((sum, activity) => sum + activity.totalCO2, 0);
+
+      // Weekly average
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - 7);
+      const weekActivities = userActivities.filter(a => new Date(a.date) >= startOfWeek);
+      weeklyAvg = weekActivities.reduce((sum, activity) => sum + activity.totalCO2, 0) / 7;
+
+      // Monthly total
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthActivities = userActivities.filter(a => new Date(a.date) >= startOfMonth);
+      monthlyTotal = monthActivities.reduce((sum, activity) => sum + activity.totalCO2, 0);
+    }
+
+    // Generate eco tips based on recent activities
+    const tips = activities.length > 0 ? 
+      generateEcoTips({}, activities[0]?.totalCO2 || 0) : 
+      ['Start logging your activities to get personalized eco tips!'];
+
+    res.json({
+      stats: {
+        totalActivities,
+        todayEmissions: Math.round(todayActivities * 100) / 100,
+        weeklyAverage: Math.round(weeklyAvg * 100) / 100,
+        monthlyTotal: Math.round(monthlyTotal * 100) / 100
+      },
+      recentActivities: activities.map(activity => ({
+        id: activity._id,
+        date: activity.date,
+        totalCO2: activity.totalCO2,
+        transport: activity.transport,
+        electricity: activity.electricity,
+        food: activity.food
+      })),
+      ecoTips: tips,
+      chartData: activities.reverse().map(activity => ({
+        date: activity.date,
+        co2: activity.totalCO2
+      }))
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ error: 'Failed to load dashboard data' });
+  }
+});
+
+export default router;
 
 const router = express.Router();
 
