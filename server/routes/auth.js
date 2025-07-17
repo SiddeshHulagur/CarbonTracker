@@ -4,6 +4,10 @@ import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
 
+// Temporary in-memory storage when MongoDB is not available
+let tempUsers = [];
+let tempUserIdCounter = 1;
+
 const router = express.Router();
 
 // Register
@@ -20,20 +24,44 @@ router.post('/register', [
 
     const { name, email, password } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+    // Try MongoDB first, fallback to in-memory storage
+    let existingUser, user;
+    try {
+      existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      user = new User({
+        name,
+        email,
+        password: hashedPassword
+      });
+
+      await user.save();
+    } catch (dbError) {
+      console.log('MongoDB not available, using temporary storage');
+      
+      // Check if user exists in temp storage
+      existingUser = tempUsers.find(u => u.email === email);
+      if (existingUser) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Create user in temp storage
+      user = {
+        _id: tempUserIdCounter++,
+        name,
+        email,
+        password: hashedPassword
+      };
+      
+      tempUsers.push(user);
     }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword
-    });
-
-    await user.save();
 
     const token = jwt.sign(
       { userId: user._id },
@@ -68,7 +96,15 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    // Try MongoDB first, fallback to in-memory storage
+    let user;
+    try {
+      user = await User.findOne({ email });
+    } catch (dbError) {
+      console.log('MongoDB not available, using temporary storage');
+      user = tempUsers.find(u => u.email === email);
+    }
+
     if (!user) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
