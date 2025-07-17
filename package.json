@@ -5,6 +5,11 @@
   "type": "module",
   "module": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "node index.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -20,5 +25,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.4",
     "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
   }
 }
