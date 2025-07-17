@@ -30,7 +30,8 @@ const connectDB = async () => {
     console.log('MongoDB connected');
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    process.exit(1);
+    console.log('Running without MongoDB - some features may not work');
+    // Don't exit process, allow server to run for development
   }
 };
 
