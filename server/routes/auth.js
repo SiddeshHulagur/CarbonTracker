@@ -1,4 +1,3 @@
-
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -27,7 +26,7 @@ router.post('/register', [
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    
+
     const user = new User({
       name,
       email,
@@ -51,7 +50,8 @@ router.post('/register', [
       }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Server error during registration' });
   }
 });
 
@@ -93,7 +93,8 @@ router.post('/login', [
       }
     });
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Server error during login' });
   }
 });
 

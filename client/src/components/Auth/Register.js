@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Register = () => {
@@ -11,6 +11,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,6 +33,9 @@ const Register = () => {
     
     if (!result.success) {
       setError(result.error);
+    } else {
+      // Successfully registered, redirect to dashboard
+      navigate('/dashboard');
     }
     
     setLoading(false);
