@@ -7,7 +7,13 @@
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Carbon Footprint Tracker - Monitor and reduce your environmental impact" />
     <title>Carbon Footprint Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use prebuilt Tailwind CSS to avoid runtime CDN script being blocked by CSP on hosts like Render -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      integrity="sha256-fm3y3xk4H8i0EcxKqJrEY4lezQwZ2xCkTgX0B0+4a7o="
+      crossorigin="anonymous"
+    />
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
