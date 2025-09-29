@@ -27,7 +27,13 @@ export const app = express();
 // Core middleware
 app.use(cors());
 app.use(express.json());
-app.use(helmet());
+// Use a relaxed Helmet configuration to avoid blocking external CDN assets (e.g., Tailwind CSS CDN)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 // In dev, CRA proxy sets X-Forwarded-For; trust proxy avoids rate-limit validation error
 if (process.env.NODE_ENV !== 'test') {
   app.set('trust proxy', 1);
