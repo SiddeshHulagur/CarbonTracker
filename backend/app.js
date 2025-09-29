@@ -32,6 +32,8 @@ app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false,
   })
 );
 // In dev, CRA proxy sets X-Forwarded-For; trust proxy avoids rate-limit validation error
