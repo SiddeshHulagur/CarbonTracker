@@ -6,28 +6,33 @@ A full-stack web application built with the MERN stack to help users track and r
 ## ✨ Features
 
 ### Frontend (React.js)
+
 - **Authentication System**: Secure login and signup with JWT
-- **Interactive Dashboard**: 
-  - Real-time carbon footprint overview
-  - Daily, weekly, and monthly emissions tracking
-  - Interactive charts showing emissions trends
-  - Personalized eco-friendly tips
-  - Achievement system with goals
-- **Activity Logging**: Easy-to-use forms for logging:
-  - Transportation (car, bike, bus, walking)
-  - Electricity usage
-  - Food consumption
-- **Leaderboard**: Compare your environmental impact with other users
-- **Responsive Design**: Works perfectly on desktop and mobile devices
+- **Interactive Dashboard**:
+Development
+------------
+
+- Install deps in root (backend deps) and in `frontend`
+- Start both with `npm run dev`
+      - Achievement + goals system
+- **Activity Logging**: Transportation, electricity, food consumption
+- **Goals Management**: Adjust daily & monthly emission targets
+- **Leaderboard**: Period filters (week / month)
+- **CSV Export**: Download your activity history
+- **Responsive Design**: Desktop & mobile ready
 
 ### Backend (Node.js + Express)
-- **RESTful API**: Clean and well-documented endpoints
-- **User Authentication**: JWT-based secure authentication
-- **Carbon Calculation Engine**: Accurate CO2 emission calculations
-- **Smart Suggestions**: Rule-based eco-friendly recommendations
-- **Data Analytics**: Comprehensive tracking and reporting
+
+- **RESTful API**: Clean and documented (Swagger UI at `/api/docs`)
+- **User Authentication**: JWT-based secure auth + rate limiting + helmet
+- **Carbon Engine**: Versioned emission factors with metadata
+- **Recommendations**: Rule-based eco-friendly tips
+- **Achievements & Streaks**: Automatic awarding & progress
+- **Data Export**: CSV endpoint for user data
+- **Validation & Security**: Input validation, non-negative constraints
 
 ### Database (MongoDB)
+
 - **User Management**: Secure user profiles and preferences
 - **Activity Tracking**: Detailed logging of daily activities
 - **Carbon Scoring**: Historical carbon footprint data
@@ -35,23 +40,27 @@ A full-stack web application built with the MERN stack to help users track and r
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js (v14 or higher)
 - MongoDB (local or cloud instance)
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd carbon-footprint-tracker
    ```
 
 2. **Install server dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Install client dependencies**
+
    ```bash
    cd client
    npm install
@@ -59,29 +68,33 @@ A full-stack web application built with the MERN stack to help users track and r
    ```
 
 4. **Environment Setup**
+
    ```bash
    cp .env.example .env
    ```
    
    Edit `.env` with your configuration:
-   ```
+
+   ```env
    MONGODB_URI=your_mongodb_connection_string
    JWT_SECRET=your_secure_jwt_secret
    PORT=5000
    ```
 
 5. **Start the application**
-   
+
    In development mode (runs both server and client):
+
    ```bash
    npm run dev
    ```
-   
+
    Or run them separately:
+
    ```bash
    # Terminal 1: Start the server
    npm start
-   
+
    # Terminal 2: Start the client
    cd client
    npm start
@@ -90,6 +103,7 @@ A full-stack web application built with the MERN stack to help users track and r
 ### Building for Production
 
 1. **Build the React app**
+
    ```bash
    cd client
    npm run build
@@ -97,6 +111,7 @@ A full-stack web application built with the MERN stack to help users track and r
    ```
 
 2. **Start the production server**
+
    ```bash
    npm start
    ```
@@ -105,15 +120,18 @@ A full-stack web application built with the MERN stack to help users track and r
 
 Our calculation engine uses research-based emission factors:
 
-### Transportation
-- **Car**: 0.21 kg CO2 per km
-- **Bus**: 0.089 kg CO2 per km  
-- **Bike/Walking**: 0 kg CO2 per km
+- Project Structure
+------------------
 
+- `backend/` Express app, routes, models, and tests
+- `frontend/` React app (Create React App)
+- `index.js` server entry that imports `backend/app.js`
 ### Electricity
+
 - **Electricity**: 0.5 kg CO2 per kWh (grid average)
 
 ### Food
+
 - **Meat**: 6.61 kg CO2 per serving
 - **Dairy**: 3.15 kg CO2 per serving
 - **Vegetables**: 0.43 kg CO2 per serving
@@ -121,7 +139,7 @@ Our calculation engine uses research-based emission factors:
 
 ## 🏗️ Project Structure
 
-```
+```text
 ├── client/                 # React frontend
 │   ├── public/            # Static assets
 │   ├── src/
@@ -141,18 +159,28 @@ Our calculation engine uses research-based emission factors:
 ## 🔗 API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
 
 ### Activities
+
 - `POST /api/activities` - Log new activity
 - `GET /api/activities` - Get user activities
 
 ### Dashboard
-- `GET /api/dashboard` - Get dashboard data
+
+- `GET /api/dashboard` - Get dashboard data (totals, streak, breakdown, achievements, factors meta)
+- `GET /api/dashboard/export` - Export activities as CSV
 
 ### Leaderboard
-- `GET /api/leaderboard` - Get leaderboard rankings
+
+- `GET /api/leaderboard` - Get leaderboard rankings (query: period=week|month)
+
+### Goals
+
+- `GET /api/goals` - Get user goals
+- `PUT /api/goals` - Update user goals
 
 ## 🌟 Contributing
 
@@ -172,4 +200,4 @@ If you have any questions or need help, please open an issue in the repository.
 
 ---
 
-**Start tracking your carbon footprint today and make a positive impact on our planet! 🌍**
+### Start tracking your carbon footprint today and make a positive impact on our planet! 🌍
